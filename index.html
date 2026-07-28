@@ -576,6 +576,13 @@
     border: 1px solid color-mix(in srgb, var(--resolved) 35%, transparent);
   }
 
+  .exhibit .verdict.pending {
+    background: var(--accent-tint);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  .verdict.pending .verdict-mark { color: var(--accent); }
+
   .verdict-mark {
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
     font-weight: 600;
@@ -847,7 +854,8 @@
       <div class="phase">
         <div class="phase-tag">Phase 6 &middot; Continuous Monitoring &amp; Hardening</div>
         <h3>Making sure it stays fixed</h3>
-        <p>Hourly automated scans were stood up across two clusters &mdash; direct server-side signature checks over an encrypted shell connection, no local mirroring required, replacing a slower file-transfer-based check that had been in place before. Bot-served doorway pages were switched from a quiet redirect to a hard &ldquo;permanently gone&rdquo; response, and crawler directives were checked for the same kind of cross-site sitemap poisoning already found once &mdash; and fixed everywhere else it recurred.</p>
+        <p>Hourly automated scans were stood up across all three clusters &mdash; direct server-side signature checks over an encrypted shell connection, no local mirroring required, replacing a slower file-transfer-based check that had been in place before. Bot-served doorway pages were switched from a quiet redirect to a hard &ldquo;permanently gone&rdquo; response, and crawler directives were checked for the same kind of cross-site sitemap poisoning already found once &mdash; and fixed everywhere else it recurred.</p>
+        <p>The monitoring earned its keep directly: a later widened check caught a site that had been marked fully remediated silently reinfected days earlier, invisible to the narrower version of the same scan the whole time. Every detection gap found this way was folded back into one shared script reused by all three clusters, so a lesson learned on one cluster is enforced on all of them from that point on &mdash; including catching and correcting its own false positives (legitimate framework test fixtures and a management tool&rsquo;s own files, both individually verified benign before being excluded) rather than either suppressing them blindly or leaving noisy alerts in place. A concurrency bug that let two scans of the same cluster overlap and slow each other down was also found and fixed with a simple lock, once actually observed rather than assumed away.</p>
       </div>
     </div>
 
@@ -860,6 +868,26 @@
         <span class="verdict-text">A one-line crawler-directive fix closed it. Verifying the source and the code first turned a false alarm into a five-minute fix instead of an incident.</span>
       </div>
     </div>
+
+    <div class="exhibit" data-exhibit="Exhibit D">
+      <h4>A backdoor that rebuilt itself in under a minute</h4>
+      <p>On one particularly stubborn WordPress site, restoring a single corrupted core file wasn&rsquo;t the end of the fix &mdash; it was the trigger for something worse. Within roughly a minute of the fix landing, the site&rsquo;s front controller was quietly rewritten back to the same cloaking backdoor and locked read-only, exactly as first found.</p>
+      <p>Investigating that response shape, instead of re-applying the same fix a fourth time, surfaced why: a legitimate-looking WordPress core file was silently loading a self-modifying payload disguised as an image asset on every single request. That payload had two jobs &mdash; compare the live backdoor file against its own embedded reference copy and rewrite it if different, and re-inject its own trigger into a randomly chosen core file if that trigger had been cleaned. Broadening the search from that first pair found six more injected core files and seven total copies of the same disguise script, hidden behind six different file extensions never associated with executable code. A related, unusually large single-file webshell from the same investigation turned out to have a dozen further copies scattered across the site&rsquo;s own plugin directories, using deliberately malformed extensions designed to survive a casual file listing.</p>
+      <div class="verdict confirmed">
+        <span class="verdict-mark">RESOLVED</span>
+        <span class="verdict-text">19 hidden copies plus the corrupted core files located and restored from a known-clean reference on the same fleet. The rebuild loop stopped for good once the last trigger was gone, not before.</span>
+      </div>
+    </div>
+
+    <div class="exhibit" data-exhibit="Exhibit E">
+      <h4>The tool built to manage many sites, doing exactly that</h4>
+      <p>While extending the same detection sweep, a routine extension-based check flagged something unexpected: a small set of plainly legitimate-looking files, shipped with non-executable extensions by design, belonging to a self-hosted multi-site WordPress management panel installed on one domain in the fleet. Rather than dismiss it as another false positive once its own content checked out clean, the panel&rsquo;s reach was traced instead &mdash; and it turned out to be actively connected, via each site&rsquo;s own management-plugin credential, to essentially every WordPress site in one compromised hosting account, and independently confirmed on at least one more site in a second, genuinely separate account.</p>
+      <p>That is the first mechanism found across the entire engagement that could explain both halves of the puzzle at once: a tightly scripted, seconds-apart infection burst across dozens of domains, and a compromise that reached across hosting-account boundaries no shared login should have crossed &mdash; without requiring a separately stolen credential for every single site. The panel itself checked out as genuine, long-installed infrastructure, not something planted by the attacker; the open question is whether its own stored access credentials, not the hosting accounts&rsquo;, were the thing that actually got compromised.</p>
+      <div class="verdict pending">
+        <span class="verdict-mark">UNDER INVESTIGATION</span>
+        <span class="verdict-text">The strongest concrete root-cause candidate identified so far &mdash; deliberately not pursued past this point without the client directly involved, since the next step touches the panel&rsquo;s own stored credentials, not just its files.</span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -869,19 +897,19 @@
     <h2 class="section-title">Where the fleet stands today</h2>
     <div class="metric-grid">
       <div class="metric">
-        <div class="metric-num">8 / 50</div>
-        <div class="metric-label">domains fully remediated, monitored, and hardened so far across two clusters</div>
+        <div class="metric-num">40+ / 50</div>
+        <div class="metric-label">domains fully remediated, monitored, and hardened so far across three clusters</div>
       </div>
       <div class="metric">
-        <div class="metric-num">30+</div>
-        <div class="metric-label">malicious files quarantined in a single confirmed, tiered batch across one cluster</div>
+        <div class="metric-num">300+</div>
+        <div class="metric-label">malicious files identified and quarantined fleet-wide, cumulative across every batch</div>
       </div>
       <div class="metric">
         <div class="metric-num">3</div>
         <div class="metric-label">distinct command-and-control endpoint variants identified and catalogued</div>
       </div>
       <div class="metric">
-        <div class="metric-num">2</div>
+        <div class="metric-num">3</div>
         <div class="metric-label">automated hourly monitoring jobs covering the fleet, replacing a slower legacy check</div>
       </div>
       <div class="metric">
