@@ -888,6 +888,27 @@
         <span class="verdict-text">The strongest concrete root-cause candidate identified so far &mdash; deliberately not pursued past this point without the client directly involved, since the next step touches the panel&rsquo;s own stored credentials, not just its files.</span>
       </div>
     </div>
+
+    <div class="exhibit" data-exhibit="Exhibit F">
+      <h4>Six doors, one key</h4>
+      <p>A deliberate project to bring every domain up to the same depth of forensic review as the worst-hit site surfaced the most capable tool found anywhere in this engagement: a fully-functional, password-protected remote file manager &mdash; browse, read, write, upload, rename, permission-change, all gated behind a single hardcoded password shared identically across every copy. Unlike the largely-neutralized debris found everywhere else by this point, several of these were live and armed.</p>
+      <p>Six working copies turned up across five domains, all sharing the same password, the same distinctive branded interface, and the same external stylesheet reference pointing at one attacker-controlled domain never seen before in this campaign &mdash; a solid new indicator to watch for going forward. Every copy also cloaked itself from search-engine crawlers specifically, the same evasion pattern already established elsewhere in this campaign, just built into a far more capable tool.</p>
+      <div class="verdict confirmed">
+        <span class="verdict-mark">RESOLVED</span>
+        <span class="verdict-text">All six copies quarantined, every affected domain re-verified healthy immediately after. At the time, this family looked confined to one hosting account &mdash; that assessment didn&rsquo;t survive the next finding.</span>
+      </div>
+    </div>
+
+    <div class="exhibit" data-exhibit="Exhibit G">
+      <h4>A backdoor that lived in the cache folder</h4>
+      <p>Reconciling a routine scanner report against what was already known turned up a discrepancy: a directory holding thousands of auto-generated, constantly-regenerating template-compiler artifacts &mdash; the kind of folder every prior sweep had effectively skipped past, since a first pass at checking it had a quiet bug that meant it scanned nothing at all &mdash; actually contained real injected code, still sitting there, not yet cleaned up.</p>
+      <p>The mechanism was new to this campaign: rather than writing a file directly to disk, the attacker&rsquo;s code had called the site&rsquo;s own templating engine at runtime and handed it malicious content as raw text. The engine faithfully compiled that into a cached, ordinary-looking artifact &mdash; and because the production configuration trusts a cached compile without re-checking its source, that cached artifact keeps working indefinitely, with or without whatever planted it still being present. Several of these compiled artifacts turned out to be self-healing droppers in their own right: rendered again, they&rsquo;d check whether their target file still existed and silently rewrite it if not &mdash; planting the same remote-file-manager tool from the previous finding, plus a second tool disguised as a routine platform installer utility offering full command execution. Others were pure reconnaissance, quietly reading order and revenue totals on a recurring monthly basis using a real, working database credential found hardcoded alongside them.</p>
+      <p>The timestamps on these artifacts predate every other known-bad activity on this part of the fleet by more than two months &mdash; the earliest confirmed foothold found anywhere in this engagement so far. They also settle the previous finding&rsquo;s open question: that remote-file-manager tool was never confined to one hosting account, it just reached this second one through a mechanism nothing had been built to look for yet.</p>
+      <div class="verdict pending">
+        <span class="verdict-mark">CONTAINED, REMEDIATION IN PROGRESS</span>
+        <span class="verdict-text">No currently-exploitable copy of anything this planted was found live at discovery &mdash; but the cached artifacts capable of replanting it were still present and had not yet been cleaned up as of this writing. Detection tooling is being extended to cover this class of hiding place across the rest of the fleet.</span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -901,7 +922,7 @@
         <div class="metric-label">domains fully remediated, monitored, and hardened so far across three clusters</div>
       </div>
       <div class="metric">
-        <div class="metric-num">300+</div>
+        <div class="metric-num">400+</div>
         <div class="metric-label">malicious files identified and quarantined fleet-wide, cumulative across every batch</div>
       </div>
       <div class="metric">
